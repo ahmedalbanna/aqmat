@@ -171,54 +171,98 @@ const Navbar = ({
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl">
-            م
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setFilter('all')}>
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20">
+            أ
           </div>
-          <span className="text-2xl font-bold text-primary">مأوى</span>
+          <span className="text-2xl font-bold text-primary tracking-tight">أقمت</span>
         </div>
         
-        <div className="hidden md:flex items-center gap-8 text-gray-600 font-medium bg-white/50 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
-          <button onClick={() => setFilter('all')} className={cn("hover:text-primary transition-colors", filter === 'all' && "text-primary font-bold")}>الرئيسية</button>
-          <button onClick={() => setFilter('urgent')} className={cn("hover:text-primary transition-colors", filter === 'urgent' && "text-primary font-bold")}>مأوى عاجل</button>
-          <button onClick={onOpenWishlist} className="hover:text-primary transition-colors flex items-center gap-1">
-            <Heart size={16} /> المفضلة
+        <div className="hidden md:flex items-center gap-8 text-gray-600 font-medium bg-white/50 px-8 py-2.5 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
+          <button onClick={() => setFilter('all')} className={cn("hover:text-primary transition-all relative py-1", filter === 'all' && "text-primary font-bold after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full")}>الرئيسية</button>
+          <button onClick={() => setFilter('urgent')} className={cn("hover:text-primary transition-all relative py-1", filter === 'urgent' && "text-primary font-bold after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full")}>دعم عاجل</button>
+          <button onClick={onOpenWishlist} className="hover:text-primary transition-colors flex items-center gap-1.5 group">
+            <Heart size={16} className="group-hover:fill-red-500 group-hover:text-red-500 transition-all" /> 
+            المفضلة
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-bold leading-none text-gray-800">{user.displayName}</p>
-                <div className="flex gap-2 text-xs mt-1">
+              <div className="hidden lg:block text-right">
+                <p className="text-xs font-bold leading-none text-gray-800">{user.displayName}</p>
+                <div className="flex gap-2 text-[10px] mt-1">
                   <button onClick={onOpenBookings} className="text-primary hover:underline font-bold">حجوزاتي</button>
                   <span className="text-gray-300">|</span>
-                  <button onClick={onOpenHostDashboard} className="text-indigo-600 hover:underline font-bold">لوحة المُضيف</button>
+                  <button onClick={onOpenHostDashboard} className="text-accent hover:underline font-bold">الإدارة</button>
                   <span className="text-gray-300">|</span>
-                  <button onClick={logout} className="text-red-500 hover:underline">خروج</button>
+                  <button onClick={logout} className="text-red-400 hover:underline">خروج</button>
                 </div>
               </div>
-              <button onClick={onOpenBookings} className="relative group">
-                <img src={user.photoURL || ''} className="w-10 h-10 rounded-full border-2 border-primary/20 group-hover:border-primary transition-colors" alt="" />
-                <div className="absolute -bottom-1 -right-1 bg-green-500 w-3.5 h-3.5 rounded-full border-2 border-white"></div>
+              <button onClick={onOpenBookings} className="relative group p-0.5 rounded-full border border-primary/20 hover:border-primary transition-colors">
+                <img src={user.photoURL || ''} className="w-9 h-9 rounded-full object-cover" alt="" />
+                <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 w-3 h-3 rounded-full border-2 border-white shadow-sm"></div>
               </button>
             </div>
           ) : (
             <button 
               onClick={login}
-              className="pill-button font-medium shadow-lg hover:shadow-xl transition-all"
+              className="pill-button font-bold text-sm shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all"
             >
-              تسجيل الدخول
+              تسجيل
             </button>
           )}
-          
-          <button className="md:hidden p-2 hover:bg-gray-100 rounded-full">
-            <Menu size={22} className="text-gray-600" />
-          </button>
         </div>
       </div>
     </nav>
+  );
+};
+
+const BottomNav = ({ 
+  activeTab, 
+  setActiveTab,
+  onOpenBookings,
+  onOpenWishlist
+}: { 
+  activeTab: string, 
+  setActiveTab: (tab: any) => void,
+  onOpenBookings: () => void,
+  onOpenWishlist: () => void
+}) => {
+  return (
+    <div className="md:hidden fixed bottom-6 left-6 right-6 z-[100]">
+      <div className="bg-white/95 backdrop-blur-xl border border-white/50 rounded-[28px] shadow-2xl p-2 flex items-center justify-around">
+        <button 
+          onClick={() => setActiveTab('all')}
+          className={cn("flex flex-col items-center gap-1 p-2 rounded-2xl transition-all", activeTab === 'all' ? "text-primary bg-primary/5" : "text-gray-400")}
+        >
+          <Home size={20} />
+          <span className="text-[10px] font-bold">الرئيسية</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('urgent')}
+          className={cn("flex flex-col items-center gap-1 p-2 rounded-2xl transition-all", activeTab === 'urgent' ? "text-green-600 bg-green-50" : "text-gray-400")}
+        >
+          <Search size={20} />
+          <span className="text-[10px] font-bold">عاجل</span>
+        </button>
+        <button 
+          onClick={onOpenWishlist}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-gray-400"
+        >
+          <Heart size={20} />
+          <span className="text-[10px] font-bold">المفضلة</span>
+        </button>
+        <button 
+          onClick={onOpenBookings}
+          className="flex flex-col items-center gap-1 p-2 rounded-2xl text-gray-400"
+        >
+          <Ticket size={20} />
+          <span className="text-[10px] font-bold">حجوزاتي</span>
+        </button>
+      </div>
+    </div>
   );
 };
 
@@ -231,18 +275,22 @@ const PropertyCard = ({ property, onClick }: { property: Property; onClick: () =
       layoutId={property.id}
       onClick={onClick}
       className={cn(
-        "group relative bg-white rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all border cursor-pointer",
-        property.isUrgentShelter ? "border-green-500/30" : "border-gray-100"
+        "group relative bg-white rounded-[28px] overflow-hidden shadow-sm hover:shadow-2xl transition-all border cursor-pointer",
+        property.isUrgentShelter ? "border-green-500/40 ring-1 ring-green-100" : "border-gray-100"
       )}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
+      variants={{
+        hidden: { opacity: 0, y: 30 },
+        visible: { opacity: 1, y: 0 }
+      }}
+      whileHover={{ y: -8 }}
+      transition={{ duration: 0.4 }}
     >
       <div className="aspect-[4/3] overflow-hidden relative">
         <img 
           src={property.image} 
           alt={property.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
         />
         <div className="absolute top-4 left-4 z-10">
           <button 
@@ -251,8 +299,8 @@ const PropertyCard = ({ property, onClick }: { property: Property; onClick: () =
               toggleWishlist(property.id);
             }}
             className={cn(
-              "p-2 rounded-full shadow-sm transition-colors",
-              isWishlisted ? "bg-red-500 text-white" : "bg-white/80 backdrop-blur text-gray-500 hover:text-red-500"
+              "p-2.5 rounded-full shadow-md transition-all active:scale-90",
+              isWishlisted ? "bg-red-500 text-white" : "bg-white/90 backdrop-blur text-gray-500 hover:text-red-500"
             )}
           >
             <Heart size={18} fill={isWishlisted ? "white" : "none"} />
@@ -260,29 +308,29 @@ const PropertyCard = ({ property, onClick }: { property: Property; onClick: () =
         </div>
         
         {property.isUrgentShelter && (
-          <div className="absolute top-4 right-4 z-10 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+          <div className="absolute top-4 right-4 z-10 bg-green-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-sm bg-opacity-90">
             <CheckCircle size={12} />
-            مأوى عاجل مدعوم
+            تأكيد فوري
           </div>
         )}
 
-        <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-medium">
-          {property.pricePerNight}$ / ليلة
+        <div className="absolute bottom-4 right-4 z-10 bg-black/70 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-bold border border-white/10">
+          {property.pricePerNight}$ <span className="text-[10px] font-normal text-gray-300">/ ليلة</span>
         </div>
       </div>
       
       <div className="p-5">
-        <div className="flex items-center gap-1.5 text-primary/70 text-sm mb-2">
-          <MapPin size={14} />
+        <div className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wide">
+          <MapPin size={12} className="text-primary" />
           <span className="truncate">{property.location}</span>
         </div>
-        <h3 className="text-xl font-bold mb-3 text-gray-900 title-serif">{property.name}</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+        <h3 className="text-xl font-bold mb-3 text-gray-900 title-serif leading-tight group-hover:text-primary transition-colors">{property.name}</h3>
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-lg border border-yellow-100">
             <Star size={14} className="text-yellow-500 fill-yellow-500" />
             <span className="font-bold text-sm text-yellow-700">{property.rating}</span>
           </div>
-          <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
+          <span className="text-[10px] font-bold px-2 py-1 bg-gray-50 text-gray-500 rounded-md border border-gray-100 uppercase tracking-tighter">
             {property.type === 'hotel' ? 'فندق' : property.type === 'apartment' ? 'شقة' : 'نُزُل'}
           </span>
         </div>
@@ -353,7 +401,7 @@ const PropertyDetails = ({ property, onClose, onBook }: { property: Property; on
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[110] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <audio 
@@ -364,29 +412,34 @@ const PropertyDetails = ({ property, onClose, onBook }: { property: Property; on
       />
       <motion.div 
         layoutId={property.id}
-        className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[40px] overflow-hidden relative shadow-2xl flex flex-col md:flex-row"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="bg-white w-full max-w-5xl md:max-h-[90vh] h-[95vh] md:h-auto rounded-t-[40px] md:rounded-[40px] overflow-hidden relative shadow-2xl flex flex-col md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 z-20 p-2 bg-white/80 backdrop-blur rounded-full shadow-md hover:bg-white transition-colors"
+          className="absolute top-6 left-6 z-20 p-2.5 bg-white/90 backdrop-blur rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
         >
           <X size={24} />
         </button>
 
-        <div className="w-full md:w-1/2 h-[300px] md:h-auto relative">
+        <div className="w-full md:w-1/2 h-[350px] md:h-auto relative shrink-0">
           <img src={property.image} alt={property.name} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent md:hidden" />
           {property.virtualTourUrl && (
-            <button className="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-4 py-2 rounded-full font-bold text-sm shadow-lg flex items-center gap-2 hover:bg-white transition-all transform hover:scale-105">
-              <Building2 size={16} /> جولة افتراضية 360°
+            <button className="absolute bottom-6 right-6 bg-white/95 backdrop-blur px-5 py-2.5 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 hover:bg-white transition-all transform hover:scale-105 active:scale-95 border border-white/20">
+              <Building2 size={16} /> جولة 360°
             </button>
           )}
         </div>
 
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto bg-[#f8f9fa]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-primary font-bold tracking-wider uppercase text-xs">
-              {property.type === 'hotel' ? 'فندق نُخبة' : 'سكن عائلي'}
+        <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto bg-[#fafafb] flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-primary font-bold tracking-widest uppercase text-[10px] md:text-xs">
+              {property.type === 'hotel' ? 'منشأة فاخرة' : property.type === 'apartment' ? 'سكن عائلي' : 'نُزُل اقتصادي'}
             </span>
             <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold ring-1 ring-yellow-200">
               <Star size={14} className="fill-yellow-600 border-none" />
@@ -394,70 +447,74 @@ const PropertyDetails = ({ property, onClose, onBook }: { property: Property; on
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold mb-4 title-serif text-gray-900">{property.name}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 title-serif text-gray-900 leading-tight">{property.name}</h2>
           
-          <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
-            <MapPin size={16} />
+          <div className="flex items-center gap-2 text-gray-400 text-sm mb-8 font-medium">
+            <MapPin size={16} className="text-primary" />
             <span>{property.location}</span>
           </div>
 
-          <div className="mb-6 p-5 bg-white rounded-3xl relative border border-gray-100 shadow-sm">
+          <div className="mb-8 p-6 bg-white rounded-[32px] relative border border-gray-100 shadow-sm group">
             <button 
               onClick={handleSpeak}
               className={cn(
-                "absolute top-4 left-4 p-2.5 rounded-full shadow-sm transition-all",
-                isPlaying ? "bg-primary text-white animate-pulse" : "bg-gray-50 text-primary hover:bg-gray-100"
+                "absolute -top-4 left-6 p-4 rounded-full shadow-xl transition-all active:scale-90",
+                isPlaying ? "bg-primary text-white ring-8 ring-primary/10 animate-pulse" : "bg-white text-primary border border-gray-100 hover:bg-gray-50"
               )}
             >
-              <Volume2 size={20} />
+              <Volume2 size={24} />
             </button>
-            <h4 className="font-bold text-sm mb-2 text-gray-800">وصف المنشأة (متاح صوتياً)</h4>
-            <p className="text-gray-600 leading-relaxed text-sm">
+            <h4 className="font-bold text-xs mb-3 text-gray-400 uppercase tracking-widest">التجربة الصوتية والوصف</h4>
+            <p className="text-gray-600 leading-relaxed text-sm md:text-base font-medium">
               {property.description}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 italic">
-              <h5 className="text-xs font-bold text-gray-400 mb-2 uppercase">تقييمات النزلاء</h5>
-              <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <div className="bg-white p-5 rounded-3xl border border-gray-100">
+              <h5 className="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-wider">تفاصيل الجودة</h5>
+              <div className="space-y-3">
                 {[
                   { label: 'النظافة', score: property.detailedRatings?.cleanliness },
                   { label: 'الموقع', score: property.detailedRatings?.location },
                   { label: 'القيمة', score: property.detailedRatings?.value }
                 ].map(r => (
                   <div key={r.label} className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">{r.label}</span>
-                    <div className="flex-1 mx-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: `${(r.score || 0) * 20}%` }} />
+                    <span className="text-xs font-bold text-gray-500">{r.label}</span>
+                    <div className="flex-1 mx-3 h-1.5 bg-gray-50 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: `${(r.score || 0) * 20}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-full bg-accent" 
+                      />
                     </div>
-                    <span className="text-xs font-bold text-primary">{r.score || '-'}</span>
+                    <span className="text-xs font-bold text-gray-900">{r.score || '-'}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-gray-100">
-               <h5 className="text-xs font-bold text-gray-400 mb-3 uppercase">المرافق</h5>
-               <div className="flex flex-wrap gap-1.5">
-                  {property.amenities.slice(0, 4).map(a => (
-                    <span key={a} className="px-2 py-1 bg-gray-50 text-[10px] font-bold text-gray-600 rounded-lg">{a}</span>
+            <div className="bg-white p-5 rounded-3xl border border-gray-100">
+               <h5 className="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-wider">المرافق المتاحة</h5>
+               <div className="flex flex-wrap gap-2">
+                  {property.amenities.map(a => (
+                    <span key={a} className="px-3 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-600 rounded-xl border border-gray-100">{a}</span>
                   ))}
-                  {property.amenities.length > 4 && <span className="text-[10px] text-gray-400 font-bold">+{property.amenities.length - 4} أخرى</span>}
                </div>
             </div>
           </div>
 
-          <div className="sticky bottom-0 bg-[#f8f9fa]/80 backdrop-blur-md pt-4 border-t border-gray-200 flex items-center justify-between gap-4">
+          <div className="mt-auto sticky bottom-0 bg-[#fafafb]/95 backdrop-blur-md pt-6 pb-2 border-t border-gray-100 flex items-center justify-between gap-6">
             <div className="flex flex-col">
-              <span className="text-[10px] text-gray-500 font-bold uppercase">المجموع الكلي</span>
-              <span className="text-xl font-bold text-primary">{property.pricePerNight}$ <span className="text-sm font-normal text-gray-400">/ الليلة</span></span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">السعر النهائي</span>
+              <span className="text-3xl font-bold text-primary">{property.pricePerNight}$ <span className="text-sm font-normal text-gray-400">/ ليلة</span></span>
             </div>
             <button 
               onClick={onBook}
-              className="bg-primary text-white flex-1 py-4 rounded-2xl font-bold text-md shadow-xl hover:bg-[#3d3d2a] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
+              className="bg-primary text-white flex-1 py-5 rounded-[20px] font-bold text-lg shadow-2xl shadow-primary/20 hover:bg-[#3d3d2a] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
             >
               حجز فوري وآمن
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>
@@ -778,26 +835,26 @@ const AIChat = ({ properties }: { properties: Property[] }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[120]">
+    <div className="fixed bottom-24 md:bottom-8 left-6 md:left-8 z-[120]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute bottom-20 right-0 w-80 md:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+            initial={{ opacity: 0, y: 20, scale: 0.9, x: -20 }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9, x: -20 }}
+            className="absolute bottom-20 left-0 w-80 md:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
           >
             <div className="p-4 bg-primary text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare size={20} />
-                <span className="font-bold">مساعد مأوى الذكي</span>
+                <span className="font-bold">مساعد أقمت الذكي</span>
               </div>
               <button onClick={() => setIsOpen(false)}><X size={20} /></button>
             </div>
 
             <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
               {messages.length === 0 && (
-                <p className="text-center text-gray-400 mt-10">مرحباً! كيف يمكنني مساعدتك اليوم في العثور على ميسرة؟</p>
+                <p className="text-center text-gray-400 mt-10">مرحباً! كيف يمكنني مساعدتك اليوم في العثور على مكان إقامتك؟</p>
               )}
               {messages.map((m, i) => (
                 <MessageBubble key={i} message={m} />
@@ -938,80 +995,93 @@ const MainApp = () => {
       
       <main className="max-w-7xl mx-auto px-4 pt-32">
         {/* Luxury Hero Section with Smart Search */}
-        <div className="mb-16 relative rounded-[40px] bg-white border border-gray-100 overflow-hidden shadow-sm p-8 md:p-16 text-center">
-          <div className="absolute inset-0 opacity-5 pointer-events-none oval-mask bg-primary" />
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-7xl font-bold mb-6 text-gray-900 title-serif max-w-4xl mx-auto leading-tight"
+        <div className="mb-8 md:mb-16 relative rounded-[32px] md:rounded-[48px] bg-white border border-gray-100 overflow-hidden shadow-sm p-6 md:p-20 text-center">
+          <div className="absolute inset-0 opacity-10 pointer-events-none oval-mask bg-primary/20" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="relative z-10"
           >
-            أينما تكون وجهتك، <br/>
-            <span className="text-primary italic">مأواك</span> بانتظارك
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed"
-          >
-            منصة رقمية شاملة لحجز غرف فندقية، وشقق مفروشة، ونُزُل. ندعم المسافرين والباحثين عن مأوى مؤقت بخواص بحث ذكية ووصف صوتي.
-          </motion.p>
-          
-          <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-xl p-2 rounded-[32px] shadow-2xl border border-white/50 flex flex-col md:flex-row items-stretch gap-2">
-            <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100">
-              <Search size={20} className="text-primary" />
-              <input 
-                type="text" 
-                placeholder="إلى أين أنت ذاهب؟ (مدينة، منطقة، مأوى)" 
-                className="w-full bg-transparent outline-none font-medium placeholder:text-gray-400"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl sm:text-4xl md:text-7xl font-bold mb-6 text-gray-900 title-serif max-w-4xl mx-auto leading-tight"
+            >
+              أينما تكون وجهتك، <br/>
+              <span className="text-primary italic relative">
+                مقر إقامتك
+                <svg className="absolute -bottom-2 left-0 w-full h-2 text-accent/40" viewBox="0 0 100 10" preserveAspectRatio="none">
+                  <path d="M0 5 Q 25 0, 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="4" />
+                </svg>
+              </span> بانتظارك
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-base md:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed px-4"
+            >
+              منصة رقمية شاملة لحجز غرف فندقية، وشقق مفروشة، ونُزُل. ندعم المسافرين والباحثين عن مأوى مؤقت بخواص بحث ذكية ووصف صوتي احترافي.
+            </motion.p>
+            
+            <div className="max-w-4xl mx-auto bg-white/90 backdrop-blur-2xl p-2 rounded-[24px] md:rounded-[32px] shadow-2xl shadow-primary/5 border border-white/50 flex flex-col md:flex-row items-stretch gap-2">
+              <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100">
+                <Search size={20} className="text-primary shrink-0" />
+                <input 
+                  type="text" 
+                  placeholder="إلى أين أنت ذاهب؟ (مدينة، مأوى)" 
+                  className="w-full bg-transparent outline-none font-medium placeholder:text-gray-400 text-sm md:text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100 group cursor-pointer hover:bg-gray-50/50 transition-colors">
+                <Calendar size={20} className="text-primary shrink-0" />
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase">التواريخ</span>
+                  <span className="text-sm font-medium text-gray-600">اختر موعد الإقامة</span>
+                </div>
+              </div>
+              <div className="hidden lg:flex items-center gap-3 px-6 py-4 border-l border-gray-100">
+                <UserIcon size={20} className="text-primary shrink-0" />
+                <div className="flex flex-col items-start translate-y-[-2px]">
+                   <span className="text-[10px] text-gray-400 font-bold uppercase">الضيوف</span>
+                   <select 
+                    className="bg-transparent outline-none font-medium appearance-none text-sm cursor-pointer"
+                    value={guests}
+                    onChange={(e) => setGuests(Number(e.target.value))}
+                  >
+                    <option value={1}>1 شخص</option>
+                    <option value={2}>شخصين</option>
+                    <option value={4}>عائلة (4+)</option>
+                  </select>
+                </div>
+              </div>
+              <button className="bg-primary text-white px-8 md:px-12 py-4 rounded-xl md:rounded-2xl font-bold shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95">
+                <Search size={18} />
+                <span>بحث ذكي</span>
+              </button>
             </div>
-            <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100">
-              <Calendar size={20} className="text-primary rotate-90" />
-              <input 
-                type="text" 
-                placeholder="التواريخ" 
-                disabled
-                defaultValue="أي وقت"
-                className="w-full bg-transparent outline-none font-medium text-gray-400"
-              />
-            </div>
-            <div className="hidden lg:flex items-center gap-3 px-6 py-4 border-l border-gray-100">
-              <UserIcon size={20} className="text-primary" />
-              <select 
-                className="bg-transparent outline-none font-medium appearance-none min-w-[100px]"
-                value={guests}
-                onChange={(e) => setGuests(Number(e.target.value))}
-              >
-                <option value={1}>1 شخص</option>
-                <option value={2}>شخصين</option>
-                <option value={4}>عائلة (4+)</option>
-              </select>
-            </div>
-            <button className="bg-primary text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
-              بحث ذكي
-            </button>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 md:mx-0 md:px-0">
             {[
               { id: 'all', label: 'الكل', icon: Home },
-              { id: 'hotel', label: 'فنادق', icon: Hotel },
-              { id: 'apartment', label: 'شقق', icon: Building2 },
-              { id: 'urgent', label: 'مأوى عاجل', icon: CheckCircle },
+              { id: 'hotel', label: 'فنادق نُخبة', icon: Hotel },
+              { id: 'apartment', label: 'شقق سكنية', icon: Building2 },
+              { id: 'urgent', label: 'دعم عاجل', icon: CheckCircle },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id as any)}
                 className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-full border transition-all whitespace-nowrap font-bold",
+                  "flex items-center gap-3 px-6 py-3.5 rounded-full border transition-all whitespace-nowrap font-bold text-sm",
                   filter === f.id 
-                    ? "bg-primary text-white border-primary shadow-md" 
-                    : "bg-white text-gray-600 border-gray-200 hover:border-primary/50"
+                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
+                    : "bg-white text-gray-600 border-gray-200 hover:border-primary/50 hover:bg-gray-50"
                 )}
               >
                 <f.icon size={18} />
@@ -1019,10 +1089,27 @@ const MainApp = () => {
               </button>
             ))}
           </div>
+          
+          <div className="hidden md:block text-sm text-gray-500 font-medium">
+            عرض <span className="font-bold text-gray-900">{filteredProperties.length}</span> من المنشآت المتاحة
+          </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {/* Grid with Staggered Animation */}
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
+        >
           {filteredProperties.map((p) => (
             <PropertyCard 
               key={p.id} 
@@ -1030,7 +1117,14 @@ const MainApp = () => {
               onClick={() => setSelectedProperty(p)} 
             />
           ))}
-        </div>
+          {filteredProperties.length === 0 && (
+            <div className="col-span-full py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-100">
+               <Search size={48} className="mx-auto text-gray-200 mb-4" />
+               <p className="text-gray-500 font-bold">عذراً، لم نجد نتائج تطابق بحثك حالياً</p>
+               <button onClick={() => {setFilter('all'); setSearchQuery('');}} className="mt-4 text-primary font-bold underline">عرض جميع المنشآت</button>
+            </div>
+          )}
+        </motion.div>
       </main>
 
       {/* Modals */}
@@ -1079,16 +1173,12 @@ const MainApp = () => {
 
       <AIChat properties={properties} />
 
-      {/* Quick Discovery FAB for Mobile */}
-      <div className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
-        <button 
-          onClick={() => setFilter('urgent')}
-          className="bg-green-600 text-white px-8 py-3.5 rounded-full shadow-2xl flex items-center gap-2 font-bold transform hover:scale-105 active:scale-95 transition-all"
-        >
-          <Search size={18} />
-          اكتشاف مأوى عاجل
-        </button>
-      </div>
+      <BottomNav 
+        activeTab={filter} 
+        setActiveTab={setFilter}
+        onOpenBookings={() => setIsBookingsModalOpen(true)}
+        onOpenWishlist={() => setIsWishlistModalOpen(true)}
+      />
     </div>
   );
 };

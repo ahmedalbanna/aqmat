@@ -128,7 +128,7 @@ export const HostDashboard = ({
       <aside className="w-full md:w-64 bg-[#0f172a] text-white flex flex-col h-screen sticky top-0 shrink-0">
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-xl">
-            م
+            أ
           </div>
           <span className="text-xl font-bold">لوحة المضيف</span>
         </div>
