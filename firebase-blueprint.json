@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Property": {
+      "title": "Property",
+      "description": "A rental property like a hotel room, apartment, or hostel bed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "enum": ["hotel", "apartment", "hostel"] },
+        "description": { "type": "string" },
+        "pricePerNight": { "type": "number" },
+        "image": { "type": "string" },
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "location": { "type": "string" },
+        "rating": { "type": "number" },
+        "available": { "type": "boolean" }
+      },
+      "required": ["name", "type", "description", "pricePerNight", "image", "location"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A reservation record for a property.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "propertyId": { "type": "string" },
+        "userId": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "status": { "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["propertyId", "userId", "startDate", "endDate", "totalPrice", "status", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "isDisplaced": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "properties": {
+      "schema": "Property",
+      "description": "Global list of available rental properties."
+    },
+    "bookings": {
+      "schema": "Booking",
+      "description": "Records of user bookings."
+    },
+    "users": {
+      "schema": "User",
+      "description": "User profiles and preferences."
+    }
+  }
+}

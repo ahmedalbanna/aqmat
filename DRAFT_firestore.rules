@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    // Properties - Publicly readable, writeable only by authorized system/admin
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow write: if false; // System only or Admin (not implemented for simple demo)
+    }
+
+    // Bookings - Private per user
+    match /bookings/{bookingId} {
+      function isValidBooking(data) {
+        return data.propertyId is string && data.propertyId.size() <= 128
+          && data.userId == request.auth.uid
+          && data.totalPrice is number && data.totalPrice >= 0
+          && data.status in ['pending', 'confirmed', 'cancelled']
+          && data.createdAt == request.time;
+      }
+
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(bookingId)
+        && isValidBooking(incoming())
+        && exists(/databases/$(database)/documents/properties/$(incoming().propertyId));
+        
+      allow update: if isOwner(existing().userId)
+        && incoming().userId == existing().userId
+        && incoming().propertyId == existing().propertyId
+        && (
+          // Action: Cancel
+          (incoming().status == 'cancelled' && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Action: Confirm (normally server-side, but allowed for this flow demo with hasOnly)
+          (incoming().status == 'confirmed' && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+        );
+    }
+
+    // User Profiles - Owner only
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == request.auth.uid
+          && data.email is string && data.email.size() <= 200
+          && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+          && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+          && (!('isDisplaced' in data) || data.isDisplaced is bool);
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'isDisplaced']);
+    }
+  }
+}
