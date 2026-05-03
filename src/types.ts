@@ -14,17 +14,40 @@ export interface Property {
   available: boolean;
   isUrgentShelter?: boolean;
   ownerId?: string;
+  virtualTourUrl?: string;
+  unitsCount: number;
+  unitsAvailable: number;
+  featured?: boolean;
+  detailedRatings?: {
+    cleanliness: number;
+    location: number;
+    value: number;
+    service: number;
+  };
+  reviewsCount?: number;
 }
 
 export interface Booking {
   id: string;
   propertyId: string;
   userId: string;
+  guestName: string;
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'checked-in' | 'checked-out';
+  paymentStatus: 'paid' | 'pending' | 'refunded';
   createdAt: string;
+}
+
+export interface FinancialRecord {
+  id: string;
+  hostId: string;
+  amount: number;
+  type: 'revenue' | 'settlement' | 'commission';
+  date: string;
+  status: 'pending' | 'completed';
+  description: string;
 }
 
 export interface UserProfile {
@@ -32,5 +55,6 @@ export interface UserProfile {
   displayName: string;
   email: string;
   photoURL?: string;
-  isDisplaced?: boolean; // Specific flag for the target audience
+  isDisplaced?: boolean; 
+  walletBalance?: number;
 }

@@ -11,7 +11,13 @@ export const INITIAL_PROPERTIES: Property[] = [
     amenities: ['واي فاي مجاني', 'تكييف', 'موقف سيارات', 'إفطار'],
     location: 'وسط المدينة، القاهرة',
     rating: 4.8,
-    available: true
+    available: true,
+    reviewsCount: 124,
+    unitsCount: 20,
+    unitsAvailable: 5,
+    ownerId: 'mocked-host-uid-1',
+    detailedRatings: { cleanliness: 4.9, location: 5.0, value: 4.5, service: 4.8 },
+    audioDescriptionUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
   },
   {
     id: '2',
@@ -23,7 +29,13 @@ export const INITIAL_PROPERTIES: Property[] = [
     amenities: ['مطبخ كامل', 'غسالة ملابس', 'تلفزيون', 'مصعد'],
     location: 'حي الزمالك، القاهرة',
     rating: 4.5,
-    available: true
+    available: true,
+    reviewsCount: 88,
+    unitsCount: 1,
+    unitsAvailable: 1,
+    ownerId: 'mocked-host-uid-1',
+    detailedRatings: { cleanliness: 4.6, location: 4.4, value: 4.8, service: 4.2 },
+    virtualTourUrl: '#'
   },
   {
     id: '3',
@@ -35,7 +47,12 @@ export const INITIAL_PROPERTIES: Property[] = [
     amenities: ['خزائن شخصية', 'غرفة غسيل', 'مساحة عمل مشتركة'],
     location: 'داون تاون، الإسكندرية',
     rating: 4.2,
-    available: true
+    available: true,
+    reviewsCount: 210,
+    unitsCount: 50,
+    unitsAvailable: 12,
+    ownerId: 'other-owner-id',
+    detailedRatings: { cleanliness: 4.0, location: 4.9, value: 4.5, service: 4.3 }
   },
   {
     id: '4',
@@ -47,7 +64,12 @@ export const INITIAL_PROPERTIES: Property[] = [
     amenities: ['مسبح', 'منتجع صحي', 'مطعم فاخر'],
     location: 'الغردقة، البحر الأحمر',
     rating: 4.9,
-    available: true
+    available: true,
+    reviewsCount: 320,
+    unitsCount: 100,
+    unitsAvailable: 45,
+    ownerId: 'mocked-host-uid-1',
+    detailedRatings: { cleanliness: 5.0, location: 4.8, value: 4.7, service: 5.0 }
   },
   {
     id: '5',
@@ -60,6 +82,11 @@ export const INITIAL_PROPERTIES: Property[] = [
     location: 'مدينة العبور، القاهرة',
     rating: 4.7,
     available: true,
-    isUrgentShelter: true
+    isUrgentShelter: true,
+    reviewsCount: 45,
+    unitsCount: 200,
+    unitsAvailable: 150,
+    ownerId: 'other-owner-id',
+    detailedRatings: { cleanliness: 4.8, location: 4.5, value: 5.0, service: 4.9 }
   }
 ];

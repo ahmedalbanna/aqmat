@@ -22,7 +22,8 @@ import {
   User as UserIcon,
   LogOut,
   Ticket,
-  CheckCircle
+  CheckCircle,
+  Calendar
 } from 'lucide-react';
 import { INITIAL_PROPERTIES } from './data';
 import { Property, PropertyType, Booking } from './types';
@@ -43,8 +44,12 @@ interface FirebaseUser {
 interface AppState {
   properties: Property[];
   bookings: Booking[];
+  wishlist: string[];
   addProperty: (property: Partial<Property>) => void;
+  updateProperty: (id: string, updates: Partial<Property>) => void;
   addBooking: (booking: Partial<Booking>) => void;
+  updateBookingStatus: (id: string, status: Booking['status']) => void;
+  toggleWishlist: (propertyId: string) => void;
 }
 
 export const AppStateContext = createContext<AppState | null>(null);
@@ -52,17 +57,50 @@ export const AppStateContext = createContext<AppState | null>(null);
 export const AppStateProvider = ({ children }: { children: React.ReactNode }) => {
   const [properties, setProperties] = useState<Property[]>(INITIAL_PROPERTIES);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
 
   const addProperty = (property: Partial<Property>) => {
-    setProperties(prev => [...prev, { ...property, id: Date.now().toString() } as Property]);
+    setProperties(prev => [...prev, { 
+      ...property, 
+      id: Date.now().toString(),
+      unitsCount: property.unitsCount || 1,
+      unitsAvailable: property.unitsAvailable || 1
+    } as Property]);
+  };
+
+  const updateProperty = (id: string, updates: Partial<Property>) => {
+    setProperties(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   };
 
   const addBooking = (booking: Partial<Booking>) => {
-    setBookings(prev => [...prev, { ...booking, id: Date.now().toString(), status: 'confirmed', createdAt: new Date().toISOString() } as Booking]);
+    setBookings(prev => [...prev, { 
+      ...booking, 
+      id: Date.now().toString(), 
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      createdAt: new Date().toISOString() 
+    } as Booking]);
+  };
+
+  const updateBookingStatus = (id: string, status: Booking['status']) => {
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+  };
+
+  const toggleWishlist = (id: string) => {
+    setWishlist(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   };
 
   return (
-    <AppStateContext.Provider value={{ properties, bookings, addProperty, addBooking }}>
+    <AppStateContext.Provider value={{ 
+      properties, 
+      bookings, 
+      wishlist, 
+      addProperty, 
+      updateProperty,
+      addBooking, 
+      updateBookingStatus,
+      toggleWishlist 
+    }}>
       {children}
     </AppStateContext.Provider>
   );
@@ -115,7 +153,19 @@ export const useAuth = () => {
 
 // --- Components ---
 
-const Navbar = ({ onOpenBookings, onOpenHostDashboard }: { onOpenBookings: () => void, onOpenHostDashboard: () => void }) => {
+const Navbar = ({ 
+  onOpenBookings, 
+  onOpenHostDashboard, 
+  onOpenWishlist,
+  filter,
+  setFilter
+}: { 
+  onOpenBookings: () => void, 
+  onOpenHostDashboard: () => void, 
+  onOpenWishlist: () => void,
+  filter: string,
+  setFilter: (f: any) => void
+}) => {
   const { user, login, logout } = useAuth();
   
   return (
@@ -129,9 +179,11 @@ const Navbar = ({ onOpenBookings, onOpenHostDashboard }: { onOpenBookings: () =>
         </div>
         
         <div className="hidden md:flex items-center gap-8 text-gray-600 font-medium bg-white/50 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-sm">
-          <a href="#" className="text-primary border-b-2 border-primary font-bold">الرئيسية</a>
-          <a href="#" className="hover:text-primary transition-colors">مأوى عاجل</a>
-          <a href="#" className="hover:text-primary transition-colors">الدعم</a>
+          <button onClick={() => setFilter('all')} className={cn("hover:text-primary transition-colors", filter === 'all' && "text-primary font-bold")}>الرئيسية</button>
+          <button onClick={() => setFilter('urgent')} className={cn("hover:text-primary transition-colors", filter === 'urgent' && "text-primary font-bold")}>مأوى عاجل</button>
+          <button onClick={onOpenWishlist} className="hover:text-primary transition-colors flex items-center gap-1">
+            <Heart size={16} /> المفضلة
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -170,59 +222,74 @@ const Navbar = ({ onOpenBookings, onOpenHostDashboard }: { onOpenBookings: () =>
   );
 };
 
-const PropertyCard = ({ property, onClick }: { property: Property; onClick: () => void; key?: string }) => (
-  <motion.div 
-    layoutId={property.id}
-    onClick={onClick}
-    className={cn(
-      "group relative bg-white rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all border cursor-pointer",
-      property.isUrgentShelter ? "border-green-500/30" : "border-gray-100"
-    )}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5 }}
-  >
-    <div className="aspect-[4/3] overflow-hidden relative">
-      <img 
-        src={property.image} 
-        alt={property.name}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-      />
-      <div className="absolute top-4 left-4 z-10">
-        <button className="p-2 bg-white/80 backdrop-blur rounded-full shadow-sm hover:bg-white transition-colors text-gray-500 hover:text-red-500">
-          <Heart size={18} />
-        </button>
+const PropertyCard = ({ property, onClick }: { property: Property; onClick: () => void; key?: string }) => {
+  const { wishlist, toggleWishlist } = useAppState();
+  const isWishlisted = wishlist.includes(property.id);
+
+  return (
+    <motion.div 
+      layoutId={property.id}
+      onClick={onClick}
+      className={cn(
+        "group relative bg-white rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all border cursor-pointer",
+        property.isUrgentShelter ? "border-green-500/30" : "border-gray-100"
+      )}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+    >
+      <div className="aspect-[4/3] overflow-hidden relative">
+        <img 
+          src={property.image} 
+          alt={property.name}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        />
+        <div className="absolute top-4 left-4 z-10">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWishlist(property.id);
+            }}
+            className={cn(
+              "p-2 rounded-full shadow-sm transition-colors",
+              isWishlisted ? "bg-red-500 text-white" : "bg-white/80 backdrop-blur text-gray-500 hover:text-red-500"
+            )}
+          >
+            <Heart size={18} fill={isWishlisted ? "white" : "none"} />
+          </button>
+        </div>
+        
+        {property.isUrgentShelter && (
+          <div className="absolute top-4 right-4 z-10 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+            <CheckCircle size={12} />
+            مأوى عاجل مدعوم
+          </div>
+        )}
+
+        <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-medium">
+          {property.pricePerNight}$ / ليلة
+        </div>
       </div>
       
-      {property.isUrgentShelter && (
-        <div className="absolute top-4 right-4 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
-          مأوى عاجل مدعوم
+      <div className="p-5">
+        <div className="flex items-center gap-1.5 text-primary/70 text-sm mb-2">
+          <MapPin size={14} />
+          <span className="truncate">{property.location}</span>
         </div>
-      )}
-
-      <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-medium">
-        {property.pricePerNight}$ / ليلة
-      </div>
-    </div>
-    
-    <div className="p-5">
-      <div className="flex items-center gap-1.5 text-primary/70 text-sm mb-2">
-        <MapPin size={14} />
-        <span className="truncate">{property.location}</span>
-      </div>
-      <h3 className="text-xl font-bold mb-3 text-gray-900 title-serif">{property.name}</h3>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-          <Star size={14} className="text-yellow-500 fill-yellow-500" />
-          <span className="font-bold text-sm text-yellow-700">{property.rating}</span>
+        <h3 className="text-xl font-bold mb-3 text-gray-900 title-serif">{property.name}</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+            <Star size={14} className="text-yellow-500 fill-yellow-500" />
+            <span className="font-bold text-sm text-yellow-700">{property.rating}</span>
+          </div>
+          <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
+            {property.type === 'hotel' ? 'فندق' : property.type === 'apartment' ? 'شقة' : 'نُزُل'}
+          </span>
         </div>
-        <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
-          {property.type === 'hotel' ? 'فندق' : property.type === 'apartment' ? 'شقة' : 'نُزُل'}
-        </span>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const FilterBar = ({ activeType, setActiveType }: { activeType: PropertyType | 'all', setActiveType: (t: PropertyType | 'all') => void }) => {
   const filters = [
@@ -258,9 +325,20 @@ const FilterBar = ({ activeType, setActiveType }: { activeType: PropertyType | '
 
 const PropertyDetails = ({ property, onClose, onBook }: { property: Property; onClose: () => void; onBook: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const handleSpeak = () => {
-    if ('speechSynthesis' in window) {
+    if (property.audioDescriptionUrl) {
+      if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      }
+    } else if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(property.description);
       utterance.lang = 'ar-SA';
@@ -278,81 +356,109 @@ const PropertyDetails = ({ property, onClose, onBook }: { property: Property; on
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
+      <audio 
+        ref={audioRef} 
+        src={property.audioDescriptionUrl} 
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
       <motion.div 
         layoutId={property.id}
-        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[40px] overflow-hidden relative shadow-2xl"
+        className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[40px] overflow-hidden relative shadow-2xl flex flex-col md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 z-10 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm hover:bg-white transition-colors"
+          className="absolute top-6 right-6 z-20 p-2 bg-white/80 backdrop-blur rounded-full shadow-md hover:bg-white transition-colors"
         >
           <X size={24} />
         </button>
 
-        <div className="grid md:grid-cols-2 h-full overflow-y-auto">
-          <div className="h-64 md:h-full">
-            <img src={property.image} alt={property.name} className="w-full h-full object-cover" />
+        <div className="w-full md:w-1/2 h-[300px] md:h-auto relative">
+          <img src={property.image} alt={property.name} className="w-full h-full object-cover" />
+          {property.virtualTourUrl && (
+            <button className="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-4 py-2 rounded-full font-bold text-sm shadow-lg flex items-center gap-2 hover:bg-white transition-all transform hover:scale-105">
+              <Building2 size={16} /> جولة افتراضية 360°
+            </button>
+          )}
+        </div>
+
+        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto bg-[#f8f9fa]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-primary font-bold tracking-wider uppercase text-xs">
+              {property.type === 'hotel' ? 'فندق نُخبة' : 'سكن عائلي'}
+            </span>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold ring-1 ring-yellow-200">
+              <Star size={14} className="fill-yellow-600 border-none" />
+              {property.rating} • {property.reviewsCount || 0} تقييم
+            </div>
           </div>
 
-          <div className="p-8 md:p-12 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-primary font-bold tracking-wider uppercase text-sm">
-                {property.type === 'hotel' ? 'فندق مميز' : 'سكن مريح'}
-              </span>
-              <div className="flex items-center gap-1 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-sm font-bold">
-                <Star size={14} className="fill-yellow-600" />
-                {property.rating}
-              </div>
-            </div>
+          <h2 className="text-3xl font-bold mb-4 title-serif text-gray-900">{property.name}</h2>
+          
+          <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
+            <MapPin size={16} />
+            <span>{property.location}</span>
+          </div>
 
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">{property.name}</h2>
-            
-            <div className="flex items-center gap-2 text-gray-500 mb-8">
-              <MapPin size={18} />
-              <span>{property.location}</span>
-            </div>
+          <div className="mb-6 p-5 bg-white rounded-3xl relative border border-gray-100 shadow-sm">
+            <button 
+              onClick={handleSpeak}
+              className={cn(
+                "absolute top-4 left-4 p-2.5 rounded-full shadow-sm transition-all",
+                isPlaying ? "bg-primary text-white animate-pulse" : "bg-gray-50 text-primary hover:bg-gray-100"
+              )}
+            >
+              <Volume2 size={20} />
+            </button>
+            <h4 className="font-bold text-sm mb-2 text-gray-800">وصف المنشأة (متاح صوتياً)</h4>
+            <p className="text-gray-600 leading-relaxed text-sm">
+              {property.description}
+            </p>
+          </div>
 
-            <div className="mb-8 p-6 bg-gray-50 rounded-3xl relative">
-              <button 
-                onClick={handleSpeak}
-                className={cn(
-                  "absolute top-4 left-4 p-3 rounded-full shadow-md transition-all",
-                  isPlaying ? "bg-primary text-white scale-110" : "bg-white text-primary hover:scale-105"
-                )}
-              >
-                <Volume2 size={24} />
-              </button>
-              <h4 className="font-bold mb-2">الوصف</h4>
-              <p className="text-gray-600 leading-relaxed text-lg">
-                {property.description}
-              </p>
-            </div>
-
-            <div className="mb-8">
-              <h4 className="font-bold mb-4">المرافق المتوفرة</h4>
-              <div className="flex flex-wrap gap-2">
-                {property.amenities.map(a => (
-                  <span key={a} className="px-4 py-2 bg-primary/5 text-primary rounded-full text-sm">
-                    {a}
-                  </span>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-2xl border border-gray-100 italic">
+              <h5 className="text-xs font-bold text-gray-400 mb-2 uppercase">تقييمات النزلاء</h5>
+              <div className="space-y-2">
+                {[
+                  { label: 'النظافة', score: property.detailedRatings?.cleanliness },
+                  { label: 'الموقع', score: property.detailedRatings?.location },
+                  { label: 'القيمة', score: property.detailedRatings?.value }
+                ].map(r => (
+                  <div key={r.label} className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">{r.label}</span>
+                    <div className="flex-1 mx-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${(r.score || 0) * 20}%` }} />
+                    </div>
+                    <span className="text-xs font-bold text-primary">{r.score || '-'}</span>
+                  </div>
                 ))}
               </div>
             </div>
-
-            <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-100 flex items-center justify-between">
-              <div>
-                <span className="text-sm text-gray-500 block">السعر الإجمالي</span>
-                <span className="text-2xl font-bold text-primary">{property.pricePerNight}$ / ليلة</span>
-              </div>
-              <button 
-                onClick={onBook}
-                className="bg-primary text-white px-10 py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2"
-              >
-                احجز الآن
-                <ChevronRight size={20} />
-              </button>
+            <div className="bg-white p-4 rounded-2xl border border-gray-100">
+               <h5 className="text-xs font-bold text-gray-400 mb-3 uppercase">المرافق</h5>
+               <div className="flex flex-wrap gap-1.5">
+                  {property.amenities.slice(0, 4).map(a => (
+                    <span key={a} className="px-2 py-1 bg-gray-50 text-[10px] font-bold text-gray-600 rounded-lg">{a}</span>
+                  ))}
+                  {property.amenities.length > 4 && <span className="text-[10px] text-gray-400 font-bold">+{property.amenities.length - 4} أخرى</span>}
+               </div>
             </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-[#f8f9fa]/80 backdrop-blur-md pt-4 border-t border-gray-200 flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-500 font-bold uppercase">المجموع الكلي</span>
+              <span className="text-xl font-bold text-primary">{property.pricePerNight}$ <span className="text-sm font-normal text-gray-400">/ الليلة</span></span>
+            </div>
+            <button 
+              onClick={onBook}
+              className="bg-primary text-white flex-1 py-4 rounded-2xl font-bold text-md shadow-xl hover:bg-[#3d3d2a] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
+            >
+              حجز فوري وآمن
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
       </motion.div>
@@ -734,19 +840,71 @@ const AIChat = ({ properties }: { properties: Property[] }) => {
   );
 };
 
-// --- Main App ---
+const WishlistModal = ({ onClose }: { onClose: () => void }) => {
+  const { wishlist, properties } = useAppState();
+  const wishlistedProperties = properties.filter(p => wishlist.includes(p.id));
+  const [selectedProp, setSelectedProp] = useState<Property | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[40px] overflow-hidden flex flex-col shadow-2xl relative"
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 z-10 p-2 bg-gray-50 rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+        >
+          <X size={24} />
+        </button>
+
+        <div className="p-8 border-b border-gray-100 bg-[#fef2f2]/50">
+          <h2 className="text-2xl font-bold title-serif flex items-center gap-2 text-red-600">
+            <Heart size={24} fill="currentColor" /> قائمة الأمنيات
+          </h2>
+          <p className="text-gray-500 text-sm">الأماكن التي تود زيارتها لاحقاً</p>
+        </div>
+
+        <div className="p-8 overflow-y-auto flex-1 bg-gray-50/30">
+          {wishlistedProperties.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+              <Heart size={48} className="mx-auto text-gray-200 mb-4" />
+              <p className="text-gray-500 font-bold">قائمتك فارغة حالياً</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-6">
+              {wishlistedProperties.map(p => (
+                <PropertyCard key={p.id} property={p} onClick={() => setSelectedProp(p)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+      <AnimatePresence>
+        {selectedProp && (
+          <PropertyDetails property={selectedProp} onClose={() => setSelectedProp(null)} onBook={() => {}} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const MainApp = () => {
   const { user, login } = useAuth();
-  const { properties, addBooking, addProperty } = useAppState();
+  const { properties, bookings, addBooking, addProperty, updateProperty, updateBookingStatus } = useAppState();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [bookingProperty, setBookingProperty] = useState<Property | null>(null);
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
   const [isHostModalOpen, setIsHostModalOpen] = useState(false);
-  const [filter, setFilter] = useState<PropertyType | 'all'>('all');
+  const [isWishlistModalOpen, setIsWishlistModalOpen] = useState(false);
+  const [filter, setFilter] = useState<PropertyType | 'all' | 'urgent'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [guests, setGuests] = useState(1);
 
   const filteredProperties = properties.filter(p => {
+    if (filter === 'urgent') return p.isUrgentShelter;
     const matchType = filter === 'all' || p.type === filter;
     const matchSearch = p.name.includes(searchQuery) || p.location.includes(searchQuery) || p.description.includes(searchQuery);
     return matchType && matchSearch;
@@ -761,6 +919,7 @@ const MainApp = () => {
     addBooking({
       propertyId: property.id,
       userId: user.uid,
+      guestName: user.displayName || 'ضيف غير معروف',
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 86400000).toISOString(),
       totalPrice: property.pricePerNight,
@@ -772,10 +931,13 @@ const MainApp = () => {
       <Navbar 
         onOpenBookings={() => setIsBookingsModalOpen(true)} 
         onOpenHostDashboard={() => setIsHostModalOpen(true)}
+        onOpenWishlist={() => setIsWishlistModalOpen(true)}
+        filter={filter}
+        setFilter={setFilter}
       />
       
       <main className="max-w-7xl mx-auto px-4 pt-32">
-        {/* Luxury Hero Section */}
+        {/* Luxury Hero Section with Smart Search */}
         <div className="mb-16 relative rounded-[40px] bg-white border border-gray-100 overflow-hidden shadow-sm p-8 md:p-16 text-center">
           <div className="absolute inset-0 opacity-5 pointer-events-none oval-mask bg-primary" />
           <motion.h1 
@@ -795,30 +957,69 @@ const MainApp = () => {
             منصة رقمية شاملة لحجز غرف فندقية، وشقق مفروشة، ونُزُل. ندعم المسافرين والباحثين عن مأوى مؤقت بخواص بحث ذكية ووصف صوتي.
           </motion.p>
           
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-3xl mx-auto bg-gray-50 rounded-full p-2 flex flex-col md:flex-row shadow-inner items-center gap-2"
-          >
-            <div className="flex-1 flex items-center bg-white px-6 py-4 rounded-full w-full">
-              <MapPin className="text-gray-400 ml-3" size={20} />
+          <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-xl p-2 rounded-[32px] shadow-2xl border border-white/50 flex flex-col md:flex-row items-stretch gap-2">
+            <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100">
+              <Search size={20} className="text-primary" />
               <input 
                 type="text" 
-                placeholder="إلى أين تتجه؟ المدينة، المنطقة..." 
-                className="w-full outline-none bg-transparent text-gray-700" 
+                placeholder="إلى أين أنت ذاهب؟ (مدينة، منطقة، مأوى)" 
+                className="w-full bg-transparent outline-none font-medium placeholder:text-gray-400"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="pill-button w-full md:w-auto h-full px-8 py-4 font-bold text-lg flex items-center justify-center gap-2 shrink-0">
-              <Search size={20} />
-              بحث
+            <div className="flex-1 flex items-center gap-3 px-6 py-4 border-b md:border-b-0 md:border-l border-gray-100">
+              <Calendar size={20} className="text-primary rotate-90" />
+              <input 
+                type="text" 
+                placeholder="التواريخ" 
+                disabled
+                defaultValue="أي وقت"
+                className="w-full bg-transparent outline-none font-medium text-gray-400"
+              />
+            </div>
+            <div className="hidden lg:flex items-center gap-3 px-6 py-4 border-l border-gray-100">
+              <UserIcon size={20} className="text-primary" />
+              <select 
+                className="bg-transparent outline-none font-medium appearance-none min-w-[100px]"
+                value={guests}
+                onChange={(e) => setGuests(Number(e.target.value))}
+              >
+                <option value={1}>1 شخص</option>
+                <option value={2}>شخصين</option>
+                <option value={4}>عائلة (4+)</option>
+              </select>
+            </div>
+            <button className="bg-primary text-white px-10 py-4 rounded-2xl font-bold shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
+              بحث ذكي
             </button>
-          </motion.div>
+          </div>
         </div>
 
-        <FilterBar activeType={filter} setActiveType={setFilter} />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
+            {[
+              { id: 'all', label: 'الكل', icon: Home },
+              { id: 'hotel', label: 'فنادق', icon: Hotel },
+              { id: 'apartment', label: 'شقق', icon: Building2 },
+              { id: 'urgent', label: 'مأوى عاجل', icon: CheckCircle },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id as any)}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-full border transition-all whitespace-nowrap font-bold",
+                  filter === f.id 
+                    ? "bg-primary text-white border-primary shadow-md" 
+                    : "bg-white text-gray-600 border-gray-200 hover:border-primary/50"
+                )}
+              >
+                <f.icon size={18} />
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -834,6 +1035,9 @@ const MainApp = () => {
 
       {/* Modals */}
       <AnimatePresence>
+        {isWishlistModalOpen && (
+          <WishlistModal onClose={() => setIsWishlistModalOpen(false)} />
+        )}
         {selectedProperty && (
           <PropertyDetails 
             property={selectedProperty} 
@@ -864,6 +1068,9 @@ const MainApp = () => {
           <HostDashboard 
             user={user}
             properties={properties}
+            bookings={bookings}
+            updateProperty={updateProperty}
+            updateBookingStatus={updateBookingStatus}
             addProperty={addProperty}
             onClose={() => setIsHostModalOpen(false)}
           />
@@ -872,11 +1079,14 @@ const MainApp = () => {
 
       <AIChat properties={properties} />
 
-      {/* Quick Search FAB for Mobile */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <button className="bg-primary text-white px-8 py-3 rounded-full shadow-2xl flex items-center gap-2 font-bold">
-          <MapPin size={18} />
-          خريطة المواقع
+      {/* Quick Discovery FAB for Mobile */}
+      <div className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
+        <button 
+          onClick={() => setFilter('urgent')}
+          className="bg-green-600 text-white px-8 py-3.5 rounded-full shadow-2xl flex items-center gap-2 font-bold transform hover:scale-105 active:scale-95 transition-all"
+        >
+          <Search size={18} />
+          اكتشاف مأوى عاجل
         </button>
       </div>
     </div>
